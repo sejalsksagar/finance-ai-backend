@@ -1,0 +1,15 @@
+git init
+git remote add origin https://github.com/<your-username>/finance-ai-backend.git
+git add .
+git commit -m "Initial backend setup"
+
+git config --global user.name ["first lastname"]
+git config --global user.email ["email address"]
+
+git branch -M main
+git push -u origin main
+
+git pull origin main --allow-unrelated-histories
+git add .
+git commit -m "Merge remote changes"
+git push -u origin main

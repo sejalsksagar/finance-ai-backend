@@ -29,12 +29,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login").permitAll()  // public APIs
+                        .requestMatchers("/auth/register", "/auth/login").permitAll()  // public APIs //, "/api/accounts/**"
                         .anyRequest().authenticated()                                  // everything else requires JWT
                 )
-//                .sessionManagement(session -> session
-//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//                )
                 .userDetailsService(userDetailsService)
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -45,16 +42,9 @@ public class SecurityConfig {
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        //provider.setUserDetailsPasswordService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
-//
-//    @Bean
-//    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-//            throws Exception {
-//        return config.getAuthenticationManager();
-//    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {

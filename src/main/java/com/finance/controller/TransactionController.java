@@ -35,7 +35,7 @@ public class TransactionController {
         tx.setCategory(request.getCategory());
         tx.setType(request.getType());
         tx.setDescription(request.getDescription());
-        tx.setTransactionDate(LocalDate.now());
+        tx.setDate(LocalDate.now());
 
         return ResponseEntity.ok(service.addTransaction(accountId, tx));
     }

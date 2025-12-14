@@ -35,4 +35,8 @@ public class AuthService {
         }
         return user;
     }
+    
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow();
+    }
 }

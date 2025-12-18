@@ -1,47 +1,52 @@
 package com.finance.controller;
 
-import java.time.LocalDate;
+import java.net.URI;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.finance.entity.Transaction;
-import com.finance.request.CreateTransactionRequest;
+import com.finance.dto.CreateTransactionRequest;
+import com.finance.dto.TransactionDTO;
 import com.finance.service.TransactionService;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/transactions")
+@RequiredArgsConstructor
 public class TransactionController {
 
-    @Autowired
-    private TransactionService service;
+    private final TransactionService transactionService;
 
-    @PostMapping("/{accountId}")
-    public ResponseEntity<Transaction> addTransaction(
+    /* =========================================================
+       Create Transaction
+       ========================================================= */
+
+    @PostMapping("/accounts/{accountId}")
+    public ResponseEntity<TransactionDTO> createTransaction(
             @PathVariable Long accountId,
             @Valid @RequestBody CreateTransactionRequest request) {
 
-        Transaction tx = new Transaction();
-        tx.setAmount(request.getAmount());
-        tx.setCategory(request.getCategory());
-        tx.setType(request.getType());
-        tx.setDescription(request.getDescription());
-        tx.setDate(LocalDate.now());
+        TransactionDTO response =
+                transactionService.createTransaction(accountId, request);
 
-        return ResponseEntity.ok(service.addTransaction(accountId, tx));
+        return ResponseEntity
+                .created(URI.create("/api/transactions/" + response.getId()))
+                .body(response);
     }
 
-    @GetMapping("/{accountId}")
-    public ResponseEntity<List<Transaction>> getTransactions(@PathVariable Long accountId) {
-        return ResponseEntity.ok(service.getTransactions(accountId));
+    /* =========================================================
+       Fetch Transactions
+       ========================================================= */
+
+    @GetMapping("/accounts/{accountId}")
+    public ResponseEntity<List<TransactionDTO>> getTransactions(
+            @PathVariable Long accountId) {
+
+        return ResponseEntity.ok(
+                transactionService.getTransactions(accountId)
+        );
     }
 }

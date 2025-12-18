@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.finance.dto.CreateBankAccountRequest;
 import com.finance.entity.BankAccount;
-import com.finance.request.CreateBankAccountRequest;
 import com.finance.service.BankAccountService;
 
 import jakarta.validation.Valid;

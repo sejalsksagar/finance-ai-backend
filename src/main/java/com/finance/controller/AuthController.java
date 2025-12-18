@@ -2,7 +2,6 @@ package com.finance.controller;
 
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.finance.dto.LoginRequest;
 import com.finance.dto.RegisterRequest;
+import com.finance.dto.UserResponse;
 import com.finance.entity.User;
 import com.finance.security.JwtUtil;
 import com.finance.service.AuthService;
@@ -22,27 +22,45 @@ import com.finance.service.AuthService;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthService authService;
+    private final AuthService authService;
+    private final JwtUtil jwtUtil;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    public AuthController(AuthService authService, JwtUtil jwtUtil) {
+        this.authService = authService;
+        this.jwtUtil = jwtUtil;
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        User user = authService.register(request);
-        return ResponseEntity.ok("User registered successfully");
+        authService.register(request);
+        return ResponseEntity.ok(Map.of("message", "User registered successfully"));
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         User user = authService.login(request);
-        String token = jwtUtil.generateToken(user.getEmail());
+
+        Map<String, Object> claims = Map.of(
+                "userId", user.getId()
+        );
+
+        String token = jwtUtil.generateToken(claims, user.getEmail());
+
         return ResponseEntity.ok(Map.of("token", token));
     }
-    
+
     @GetMapping("/me")
-    public User me(@AuthenticationPrincipal UserDetails user) {
-        return authService.getUserByEmail(user.getUsername());
+    public ResponseEntity<UserResponse> me(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = authService.getUserByEmail(userDetails.getUsername());
+
+        return ResponseEntity.ok(
+                new UserResponse(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getName()
+                )
+        );
     }
 }

@@ -1,0 +1,88 @@
+ALTER TABLE transactions
+ADD CONSTRAINT chk_transaction_type
+CHECK (type IN ('INCOME', 'EXPENSE'));
+
+-- Clear transactions first
+DELETE FROM transactions;
+
+-- Clear bank accounts
+DELETE FROM bank_account;
+
+ALTER TABLE transactions AUTO_INCREMENT = 1;
+ALTER TABLE bank_account AUTO_INCREMENT = 1;
+
+
+INSERT INTO users (id, email, password)
+VALUES
+(1, 'user1@test.com', 'dummy'),
+(2, 'user2@test.com', 'dummy');
+
+
+INSERT INTO bank_account
+(account_number, account_type, balance, bank_name, user_id)
+VALUES
+-- User 1
+('1111111111', 'SAVINGS', 150000, 'HDFC', 1),
+('2222222222', 'SAVINGS', 70000,  'ICICI', 1),
+
+-- User 2
+('3333333333', 'SAVINGS', 90000,  'AXIS', 2);
+
+
+INSERT INTO transactions
+(amount, category, type, description, date, bank_account_id)
+VALUES
+-- JAN 2025
+(60000, 'SALARY',     'INCOME',  'January Salary', '2025-01-01', 1),
+(3500,  'RENT',       'EXPENSE', 'House Rent',    '2025-01-03', 1),
+(1200,  'FOOD',       'EXPENSE', 'Groceries',     '2025-01-05', 1),
+(800,   'TRANSPORT',  'EXPENSE', 'Cab & Metro',   '2025-01-10', 1),
+
+-- FEB 2025
+(62000, 'SALARY',     'INCOME',  'February Salary','2025-02-01', 1),
+(3500,  'RENT',       'EXPENSE', 'Rent',          '2025-02-03', 1),
+(1500,  'FOOD',       'EXPENSE', 'Dining Out',    '2025-02-07', 1);
+
+
+INSERT INTO transactions
+(amount, category, type, description, date, bank_account_id)
+VALUES
+-- MAR 2025
+(12000, 'FREELANCE',  'INCOME',  'Side Project',  '2025-03-01', 2),
+(2000,  'FOOD',       'EXPENSE', 'Groceries',    '2025-03-04', 2),
+(1800,  'SHOPPING',   'EXPENSE', 'Clothes',      '2025-03-06', 2);
+
+
+INSERT INTO transactions
+(amount, category, type, description, date, bank_account_id)
+VALUES
+(50000, 'SALARY', 'INCOME',  'User2 Salary', '2025-01-01', 3),
+(6000,  'RENT',   'EXPENSE', 'Rent',         '2025-01-05', 3),
+(2200,  'FOOD',   'EXPENSE', 'Groceries',    '2025-01-07', 3);
+
+
+-- Transactions per user
+SELECT b.user_id, t.*
+FROM transactions t
+JOIN bank_account b ON t.bank_account_id = b.id
+ORDER BY b.user_id, t.date;
+
+-- Category Breakdown (User 1)
+SELECT t.category, SUM(t.amount) AS total
+FROM transactions t
+JOIN bank_account b ON t.bank_account_id = b.id
+WHERE b.user_id = 1
+  AND t.type = 'EXPENSE'
+GROUP BY t.category
+ORDER BY total DESC;
+
+-- Monthly Trend (User 1)
+SELECT DATE_FORMAT(t.date, '%Y-%m') AS month,
+       SUM(CASE WHEN t.type = 'INCOME' THEN t.amount ELSE 0 END) AS income,
+       SUM(CASE WHEN t.type = 'EXPENSE' THEN t.amount ELSE 0 END) AS expense
+FROM transactions t
+JOIN bank_account b ON t.bank_account_id = b.id
+WHERE b.user_id = 1
+GROUP BY month
+ORDER BY month;
+

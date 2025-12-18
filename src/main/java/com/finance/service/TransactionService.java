@@ -1,42 +1,93 @@
 package com.finance.service;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.finance.dto.TransactionDTO;
+import com.finance.dto.CreateTransactionRequest;
 import com.finance.entity.BankAccount;
 import com.finance.entity.Transaction;
+import com.finance.entity.TransactionType;
 import com.finance.repository.BankAccountRepository;
 import com.finance.repository.TransactionRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class TransactionService {
 
-    @Autowired
-    private TransactionRepository repo;
+    private final TransactionRepository transactionRepository;
+    private final BankAccountRepository bankAccountRepository;
 
-    @Autowired
-    private BankAccountRepository accountRepo;
+    /* =========================================================
+       Create Transaction (Command DTO → Entity → Response DTO)
+       ========================================================= */
+    @Transactional
+    public TransactionDTO createTransaction(
+            Long accountId,
+            CreateTransactionRequest request) {
 
-    public Transaction addTransaction(Long accountId, Transaction tx) {
-        BankAccount account = accountRepo.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+        BankAccount account = bankAccountRepository.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Bank account not found"));
 
-        tx.setBankAccount(account);
+        Transaction transaction = new Transaction();
+        transaction.setAmount(request.getAmount());
+        transaction.setCategory(request.getCategory());
+        transaction.setType(request.getType());
+        transaction.setDescription(request.getDescription());
+        transaction.setDate(LocalDate.now());
+        transaction.setBankAccount(account);
 
-        // Update account balance
-        if (tx.getType().equalsIgnoreCase("DEBIT")) {
-            account.setBalance(account.getBalance() - tx.getAmount());
-        } else {
-            account.setBalance(account.getBalance() + tx.getAmount());
-        }
+        applyBalanceUpdate(account, transaction);
 
-        accountRepo.save(account);
-        return repo.save(tx);
+        Transaction saved = transactionRepository.save(transaction);
+
+        return mapToDto(saved);
     }
-    
-    public List<Transaction> getTransactions(Long accountId) {
-        return repo.findByBankAccountId(accountId);
+
+    /* =========================================================
+       Fetch Transactions
+       ========================================================= */
+    @Transactional(readOnly = true)
+    public List<TransactionDTO> getTransactions(Long accountId) {
+        return transactionRepository.findByBankAccountId(accountId)
+                .stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    /* =========================================================
+       Business Logic
+       ========================================================= */
+    private void applyBalanceUpdate(BankAccount account, Transaction transaction) {
+
+        if (transaction.getType() == TransactionType.EXPENSE) {
+            account.setBalance(account.getBalance() - transaction.getAmount());
+        } else if (transaction.getType() == TransactionType.INCOME) {
+            account.setBalance(account.getBalance() + transaction.getAmount());
+        } else {
+            throw new IllegalStateException("Unsupported transaction type");
+        }
+    }
+
+    /* =========================================================
+       Entity → DTO Mapping
+       ========================================================= */
+    private TransactionDTO mapToDto(Transaction tx) {
+
+        TransactionDTO dto = new TransactionDTO();
+        dto.setId(tx.getId());
+        dto.setAmount(tx.getAmount());
+        dto.setCategory(tx.getCategory().name());
+        dto.setType(tx.getType().name());
+        dto.setDescription(tx.getDescription());
+        dto.setDate(tx.getDate());
+
+        return dto;
     }
 }

@@ -12,5 +12,5 @@ public class TransactionDTO {
     private String category;
     private String type;
     private String description;
-    private LocalDate transactionDate;
+    private LocalDate date;
 }

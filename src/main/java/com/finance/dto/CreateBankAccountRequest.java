@@ -1,4 +1,4 @@
-package com.finance.request;
+package com.finance.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

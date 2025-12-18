@@ -1,48 +1,78 @@
 package com.finance.service;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.finance.dto.CategoryBreakdownDTO;
+import com.finance.dto.DashboardResponse;
+import com.finance.dto.MonthlyTrendDTO;
+import com.finance.entity.TransactionType;
 import com.finance.repository.TransactionRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class DashboardService {
 
-    @Autowired
-    private TransactionRepository repo;
+    private final TransactionRepository transactionRepository;
 
-    public Map<String, Object> getDashboardSummary(int month, int year) {
-        Map<String, Object> result = new HashMap<>();
+    public DashboardResponse getDashboardSummary(
+            Long userId,
+            LocalDate startDate,
+            LocalDate endDate) {
 
-        double expense = repo.getMonthlyExpense(month, year);
-        double income = repo.getMonthlyIncome(month, year);
-
-        result.put("totalExpense", expense);
-        result.put("totalIncome", income);
-        result.put("netSavings", income - expense);
-
-        // Category-wise summary
-        List<Object[]> categoryData = repo.getCategorySummary(month, year);
-        Map<String, Double> categoryMap = new HashMap<>();
-
-        for (Object[] row : categoryData) {
-            categoryMap.put((String) row[0], ((Number) row[1]).doubleValue());
+        // Default date range 
+        if (startDate == null) {
+            startDate = LocalDate.of(1970, 1, 1);
         }
-        result.put("categorySummary", categoryMap);
-
-        // Monthly trend
-        List<Object[]> trendData = repo.getMonthlyTrend();
-        Map<String, Double> trendMap = new LinkedHashMap<>();
-        for (Object[] row : trendData) {
-            trendMap.put((String) row[0], ((Number) row[1]).doubleValue());
+        if (endDate == null) {
+            endDate = LocalDate.now();
         }
-        result.put("trend", trendMap);
 
-        return result;
+        // ---------- Summary ----------
+        Double income = transactionRepository
+                .sumAmountByTypeAndUserAndDateRange(
+                        TransactionType.INCOME.name(), userId, startDate, endDate);
+
+        Double expense = transactionRepository
+                .sumAmountByTypeAndUserAndDateRange(
+                        TransactionType.EXPENSE.name(), userId, startDate, endDate);
+
+        long transactionCount =
+                transactionRepository.countByUserAndDateRange(
+                        userId, startDate, endDate);
+
+        double totalIncome = income != null ? income : 0.0;
+        double totalExpense = expense != null ? expense : 0.0;
+
+        DashboardResponse.Summary summary =
+                new DashboardResponse.Summary(
+                        totalIncome,
+                        totalExpense,
+                        totalIncome - totalExpense,
+                        transactionCount
+                );
+
+        // ---------- Category Breakdown ----------
+        List<CategoryBreakdownDTO> categoryBreakdown =
+                transactionRepository.findExpenseBreakdownByCategory(
+                        userId, startDate, endDate);
+
+        // ---------- Monthly Trend ----------
+        List<MonthlyTrendDTO> monthlyTrend =
+                transactionRepository.findMonthlyIncomeExpenseTrend(
+                        userId, startDate, endDate);
+
+        // ---------- Final Response ----------
+        return new DashboardResponse(
+                summary,
+                categoryBreakdown,
+                monthlyTrend
+        );
     }
 }

@@ -115,5 +115,26 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     	    @Param("startDate") LocalDate startDate,
     	    @Param("endDate") LocalDate endDate
     	);
+    
+    /* =========================================================
+    Transactions for AI Insights (User + Date Range)
+    ========================================================= */
+
+	 @Query(
+	     value = """
+	         SELECT t.*
+	         FROM transactions t
+	         JOIN bank_account b ON t.bank_account_id = b.id
+	         WHERE b.user_id = :userId
+	           AND t.date BETWEEN :startDate AND :endDate
+	         ORDER BY t.date DESC
+	     """,
+	     nativeQuery = true
+	 )
+	 List<Transaction> findTransactionsForAI(
+	     @Param("userId") Long userId,
+	     @Param("startDate") LocalDate startDate,
+	     @Param("endDate") LocalDate endDate
+	 );
 
 }

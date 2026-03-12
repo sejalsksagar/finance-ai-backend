@@ -20,6 +20,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
        ========================================================= */
 
     List<Transaction> findByBankAccountId(Long bankAccountId);
+    List<Transaction> findByBankAccountUserIdOrderByDateDesc(Long userId); //transaction.bankAccount.user.id
 
     /* =========================================================
        Transaction Count (User Scoped)

@@ -4,10 +4,12 @@ import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.finance.dto.CreateTransactionRequest;
 import com.finance.dto.TransactionDTO;
+import com.finance.security.UserPrincipal;
 import com.finance.service.TransactionService;
 
 import jakarta.validation.Valid;
@@ -21,7 +23,7 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     /* =========================================================
-       Create Transaction
+       Create Transaction (Account still needed)
        ========================================================= */
 
     @PostMapping("/accounts/{accountId}")
@@ -38,15 +40,15 @@ public class TransactionController {
     }
 
     /* =========================================================
-       Fetch Transactions
+       Fetch ALL Transactions for Logged-in User
        ========================================================= */
 
-    @GetMapping("/accounts/{accountId}")
-    public ResponseEntity<List<TransactionDTO>> getTransactions(
-            @PathVariable Long accountId) {
+    @GetMapping
+    public ResponseEntity<List<TransactionDTO>> getAllUserTransactions(
+            @AuthenticationPrincipal UserPrincipal user) {
 
         return ResponseEntity.ok(
-                transactionService.getTransactions(accountId)
+                transactionService.getAllTransactionsForUser(user.getId())
         );
     }
 }

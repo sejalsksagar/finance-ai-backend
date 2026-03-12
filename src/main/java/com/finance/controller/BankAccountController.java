@@ -2,31 +2,32 @@ package com.finance.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import com.finance.dto.CreateBankAccountRequest;
 import com.finance.entity.BankAccount;
+import com.finance.security.UserPrincipal;
 import com.finance.service.BankAccountService;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/accounts")
+@RequiredArgsConstructor
 public class BankAccountController {
 
-    @Autowired
-    private BankAccountService service;
+    private final BankAccountService service;
 
-    @PostMapping("/{userId}")
+    /* ==============================
+       Create Account
+       ============================== */
+
+    @PostMapping
     public ResponseEntity<BankAccount> addAccount(
-            @PathVariable Long userId,
+            @AuthenticationPrincipal UserPrincipal user,
             @Valid @RequestBody CreateBankAccountRequest request) {
 
         BankAccount account = new BankAccount();
@@ -35,11 +36,21 @@ public class BankAccountController {
         account.setAccountType(request.getAccountType());
         account.setBalance(request.getBalance());
 
-        return ResponseEntity.ok(service.addAccount(userId, account));
+        return ResponseEntity.ok(
+                service.addAccount(user.getId(), account)
+        );
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<BankAccount>> getAccounts(@PathVariable Long userId) {
-        return ResponseEntity.ok(service.getUserAccounts(userId));
+    /* ==============================
+       Get All User Accounts
+       ============================== */
+
+    @GetMapping
+    public ResponseEntity<List<BankAccount>> getAccounts(
+            @AuthenticationPrincipal UserPrincipal user) {
+
+        return ResponseEntity.ok(
+                service.getUserAccounts(user.getId())
+        );
     }
 }

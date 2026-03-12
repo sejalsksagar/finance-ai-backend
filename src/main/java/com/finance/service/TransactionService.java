@@ -49,17 +49,29 @@ public class TransactionService {
 
         return mapToDto(saved);
     }
-
+    
     /* =========================================================
-       Fetch Transactions
-       ========================================================= */
-    @Transactional(readOnly = true)
-    public List<TransactionDTO> getTransactions(Long accountId) {
-        return transactionRepository.findByBankAccountId(accountId)
+    Fetch All Transactions for an User
+    ========================================================= */
+    
+    public List<TransactionDTO> getAllTransactionsForUser(Long userId) {
+        return transactionRepository
+                .findByBankAccountUserIdOrderByDateDesc(userId)
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
+
+//    /* =========================================================
+//       Fetch Transactions for an Account
+//       ========================================================= */
+//    @Transactional(readOnly = true)
+//    public List<TransactionDTO> getTransactions(Long accountId) {
+//        return transactionRepository.findByBankAccountId(accountId)
+//                .stream()
+//                .map(this::mapToDto)
+//                .collect(Collectors.toList());
+//    }
 
     /* =========================================================
        Business Logic
